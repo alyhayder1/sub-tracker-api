@@ -1,0 +1,5 @@
+{
+    "permissions": {
+      "allow": ["Read", "Edit", "Bash(make *)", "Bash(go test ./...)", "Bash(git status)"]
+    }
+  }

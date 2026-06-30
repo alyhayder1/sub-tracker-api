@@ -36,3 +36,4 @@ go.work.sum
 
 /tmp/
 tmp/
+.claude/settings.local.json
