@@ -1,4 +1,4 @@
-module github.com/alyhayder1/sub-tracker-api
+module github.com/sub-tracker-hq/sub-tracker-api
 
 go 1.26.4
 
