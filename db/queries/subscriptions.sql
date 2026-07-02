@@ -4,7 +4,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING *;
 
 -- name: GetSubscription :one
-SELECT * FROM subscriptions WHERE id = $1;
+SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2;
 
 -- name: ListSubscriptionsByUser :many
 SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY next_billing_date NULLS LAST;
@@ -17,14 +17,14 @@ ORDER BY next_billing_date;
 
 -- name: UpdateSubscription :one
 UPDATE subscriptions
-SET name = $2, category = $3, amount = $4, currency = $5, billing_cycle = $6, next_billing_date = $7, updated_at = now()
-WHERE id = $1
+SET name = $3, category = $4, amount = $5, currency = $6, billing_cycle = $7, next_billing_date = $8, updated_at = now()
+WHERE id = $1 AND user_id = $2
 RETURNING *;
 
 -- name: UpdateSubscriptionStatus :exec
 UPDATE subscriptions
-SET status = $2, updated_at = now()
-WHERE id = $1;
+SET status = $3, updated_at = now()
+WHERE id = $1 AND user_id = $2;
 
--- name: DeleteSubscription :exec
-DELETE FROM subscriptions WHERE id = $1;
+-- name: DeleteSubscription :execrows
+DELETE FROM subscriptions WHERE id = $1 AND user_id = $2;
