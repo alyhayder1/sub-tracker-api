@@ -9,6 +9,14 @@ SELECT * FROM users WHERE id = $1;
 -- name: GetUserByClerkID :one
 SELECT * FROM users WHERE clerk_id = $1;
 
+-- name: UpsertUserByClerkID :one
+INSERT INTO users (clerk_id, email, full_name, default_currency)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (clerk_id) DO UPDATE
+SET email = EXCLUDED.email,
+    full_name = EXCLUDED.full_name
+RETURNING *;
+
 -- name: UpdateUser :one
 UPDATE users
 SET full_name = $2, default_currency = $3, updated_at = now()

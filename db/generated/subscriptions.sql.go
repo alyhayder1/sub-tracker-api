@@ -62,21 +62,34 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 	return i, err
 }
 
-const deleteSubscription = `-- name: DeleteSubscription :exec
-DELETE FROM subscriptions WHERE id = $1
+const deleteSubscription = `-- name: DeleteSubscription :execrows
+DELETE FROM subscriptions WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) DeleteSubscription(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteSubscription, id)
-	return err
+type DeleteSubscriptionParams struct {
+	ID     pgtype.UUID `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
+}
+
+func (q *Queries) DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteSubscription, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const getSubscription = `-- name: GetSubscription :one
-SELECT id, user_id, provider_key, name, category, amount, currency, billing_cycle, next_billing_date, status, source, created_at, updated_at FROM subscriptions WHERE id = $1
+SELECT id, user_id, provider_key, name, category, amount, currency, billing_cycle, next_billing_date, status, source, created_at, updated_at FROM subscriptions WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) GetSubscription(ctx context.Context, id pgtype.UUID) (Subscription, error) {
-	row := q.db.QueryRow(ctx, getSubscription, id)
+type GetSubscriptionParams struct {
+	ID     pgtype.UUID `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
+}
+
+func (q *Queries) GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error) {
+	row := q.db.QueryRow(ctx, getSubscription, arg.ID, arg.UserID)
 	var i Subscription
 	err := row.Scan(
 		&i.ID,
@@ -182,13 +195,14 @@ func (q *Queries) ListUpcomingRenewals(ctx context.Context, arg ListUpcomingRene
 
 const updateSubscription = `-- name: UpdateSubscription :one
 UPDATE subscriptions
-SET name = $2, category = $3, amount = $4, currency = $5, billing_cycle = $6, next_billing_date = $7, updated_at = now()
-WHERE id = $1
+SET name = $3, category = $4, amount = $5, currency = $6, billing_cycle = $7, next_billing_date = $8, updated_at = now()
+WHERE id = $1 AND user_id = $2
 RETURNING id, user_id, provider_key, name, category, amount, currency, billing_cycle, next_billing_date, status, source, created_at, updated_at
 `
 
 type UpdateSubscriptionParams struct {
 	ID              pgtype.UUID    `json:"id"`
+	UserID          pgtype.UUID    `json:"user_id"`
 	Name            string         `json:"name"`
 	Category        string         `json:"category"`
 	Amount          pgtype.Numeric `json:"amount"`
@@ -200,6 +214,7 @@ type UpdateSubscriptionParams struct {
 func (q *Queries) UpdateSubscription(ctx context.Context, arg UpdateSubscriptionParams) (Subscription, error) {
 	row := q.db.QueryRow(ctx, updateSubscription,
 		arg.ID,
+		arg.UserID,
 		arg.Name,
 		arg.Category,
 		arg.Amount,
@@ -228,16 +243,17 @@ func (q *Queries) UpdateSubscription(ctx context.Context, arg UpdateSubscription
 
 const updateSubscriptionStatus = `-- name: UpdateSubscriptionStatus :exec
 UPDATE subscriptions
-SET status = $2, updated_at = now()
-WHERE id = $1
+SET status = $3, updated_at = now()
+WHERE id = $1 AND user_id = $2
 `
 
 type UpdateSubscriptionStatusParams struct {
 	ID     pgtype.UUID `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
 	Status string      `json:"status"`
 }
 
 func (q *Queries) UpdateSubscriptionStatus(ctx context.Context, arg UpdateSubscriptionStatusParams) error {
-	_, err := q.db.Exec(ctx, updateSubscriptionStatus, arg.ID, arg.Status)
+	_, err := q.db.Exec(ctx, updateSubscriptionStatus, arg.ID, arg.UserID, arg.Status)
 	return err
 }
